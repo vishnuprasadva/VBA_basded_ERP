@@ -1,0 +1,13 @@
+Work Order Creation: Enables structured entry of customer requirements and project-specific details.
+
+Bill of Materials (BOM): Generates component breakdowns for each work order, ensuring material traceability and proper assembly planning.
+
+Customer and Tender Management: Links customer profiles and tender data for faster quotation and order processing.
+
+Quotation and Work Order PDFs: Auto-generates formatted documents with pre-filled data to maintain consistency and reduce human error.
+
+Job Card Generation: Tracks shop floor tasks with details like operations, drawings, and material usage.
+
+Raw Material and Issue Management: Monitors raw material intake, testing certificates, and issuance to production.
+
+Integrated File Linking: Draws data from master files (like customer and material databases) to populate dropdowns and automate entries.
