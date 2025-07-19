@@ -53,4 +53,4 @@ This is a lightweight, Excel VBA-based ERP solution designed for small to mid-sc
 
 ---
 
-Feel free to customize this for your own project needs!
+
