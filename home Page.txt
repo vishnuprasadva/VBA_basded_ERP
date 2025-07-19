@@ -1,0 +1,54 @@
+Private Sub cmdCreateWorkOrder_Click()
+    OrderForm.Show
+End Sub
+
+
+Private Sub cmdQuotationGenerate_Click()
+    QuotationForm.Show
+End Sub
+
+
+
+Private Sub newcustomer_Click()
+
+    CreateCustomer.Show
+End Sub
+
+
+Private Sub TenderEntry_Click()
+    Dim tenderWb As Workbook
+    Dim formName As String
+
+    formName = "TenderForm" ' Change if your form has a different name
+
+    On Error Resume Next
+    Set tenderWb = Workbooks("tender_master.xlsm")
+    
+    ' Open tender_master if it's not already open
+    If tenderWb Is Nothing Then
+        Set tenderWb = Workbooks.Open(ThisWorkbook.Path & "\tender_master.xlsm")
+    End If
+    On Error GoTo 0
+
+    ' Run the macro to show the TenderForm
+    If Not tenderWb Is Nothing Then
+        Application.Run "'" & tenderWb.Name & "'!ShowTenderForm"
+    Else
+        MsgBox "Could not open tender_master.xlsm", vbExclamation
+    End If
+End Sub
+
+Private Sub UserForm_Click()
+
+End Sub
+
+Private Sub viewcust_Click()
+
+    Dim filePath As String
+    filePath = ThisWorkbook.Path & "\customer_master.xlsx"
+
+    On Error Resume Next
+    Workbooks.Open filePath
+    On Error GoTo 0
+End Sub
+

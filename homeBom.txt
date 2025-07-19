@@ -1,0 +1,24 @@
+Private Sub cmdViewMaterialMaster_Click()
+    Dim filePath As String
+
+    ' Path of the material_master.xlsx (same folder as this workbook)
+    filePath = ThisWorkbook.Path & "\material_master.xlsx"
+
+    ' Check if file exists
+    If Dir(filePath) = "" Then
+        MsgBox "material_master.xlsx not found in the folder: " & ThisWorkbook.Path, vbExclamation
+        Exit Sub
+    End If
+
+    ' Open the file
+    Workbooks.Open filePath
+End Sub
+
+
+Private Sub createbom_Click()
+BomForm.Show
+End Sub
+
+Private Sub viewBom_Click()
+cmdOpenDetails.Show
+End Sub

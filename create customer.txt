@@ -1,0 +1,49 @@
+
+Private Sub Label6_Click()
+
+End Sub
+
+Private Sub submit_Click()
+    Dim filePath As String
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim nextRow As Long
+
+    filePath = ThisWorkbook.Path & "\customer_master.xlsx"
+
+    On Error Resume Next
+    Set wb = Workbooks.Open(filePath)
+    On Error GoTo 0
+
+    If wb Is Nothing Then
+        MsgBox "Could not open customer_master.xlsx", vbCritical
+        Exit Sub
+    End If
+
+    Set ws = wb.Sheets("Customers")
+    If ws Is Nothing Then
+        MsgBox "Sheet 'Customers' not found!", vbCritical
+        wb.Close False
+        Exit Sub
+    End If
+
+    ' Find next empty row
+    nextRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row + 1
+    If nextRow < 2 Then nextRow = 2 ' Ensure we don’t write in header row
+
+    ' Write values
+    ws.Cells(nextRow, 1).Value = TxtCust.Value
+    ws.Cells(nextRow, 2).Value = TxtName.Value
+    ws.Cells(nextRow, 3).Value = TxtAdd.Value
+    ws.Cells(nextRow, 4).Value = TxtGst.Value
+
+    wb.Close SaveChanges:=True
+    MsgBox "Customer saved successfully!", vbInformation
+
+    Unload Me
+
+End Sub
+
+Private Sub UserForm_Click()
+
+End Sub

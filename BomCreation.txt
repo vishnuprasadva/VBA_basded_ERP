@@ -1,0 +1,174 @@
+Private Sub txtTotalQty_Change()
+
+End Sub
+
+Private Sub UserForm_Initialize()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long
+    Dim i As Long
+
+    ' Set the path to customer_master.xlsx (update extension as needed)
+    filePath = ThisWorkbook.Path & "\customer_master.xlsx" ' Change to .xlsm if needed
+
+    ' Try to open the workbook
+    On Error Resume Next
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True)
+    On Error GoTo 0
+
+    If wb Is Nothing Then
+        MsgBox "? Could not open 'customer_master.xlsx'. Make sure the file exists in the same folder.", vbCritical
+        Exit Sub
+    End If
+
+    ' Safely try to reference the sheet
+    On Error Resume Next
+    Set ws = wb.Sheets("WorkOrders_DB")
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        MsgBox "? Sheet 'WorkOrders_DB' not found in 'customer_master.xlsx'.", vbCritical
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+
+    ' Clear the combo box
+    Me.cmbWorkOrder.Clear
+
+    ' Load Work Order Numbers into the combo box
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    For i = 2 To lastRow
+        If Trim(ws.Cells(i, 1).Value) <> "" Then
+            Me.cmbWorkOrder.AddItem ws.Cells(i, 1).Value
+        End If
+    Next i
+
+    ' Close the external workbook without saving
+    wb.Close SaveChanges:=False
+End Sub
+
+Private Sub cmdNext_Click()
+    Dim ws As Worksheet
+    Dim nextRow As Long
+    Dim slNo As Long
+
+    ' Reference the temporary sheet
+    Set ws = ThisWorkbook.Sheets("TempBOM")
+
+    ' Get next row
+    nextRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
+    slNo = nextRow - 1 ' Adjust for header
+
+    ' Add data
+    ws.Cells(nextRow, 1).Value = slNo
+    ws.Cells(nextRow, 2).Value = Me.txtComponent.Value
+    ws.Cells(nextRow, 3).Value = Me.txtDrawingNumber.Value
+    ws.Cells(nextRow, 4).Value = Me.txtQtyPerSet.Value
+    ws.Cells(nextRow, 5).Value = Me.txtTotalQty.Value
+    ws.Cells(nextRow, 6).Value = Me.txtMaterial.Value
+    ws.Cells(nextRow, 7).Value = Me.txtKortasID.Value
+
+    ' Clear inputs
+    Me.txtComponent.Value = ""
+    Me.txtDrawingNumber.Value = ""
+    Me.txtQtyPerSet.Value = ""
+    Me.txtTotalQty.Value = ""
+    Me.txtMaterial.Value = ""
+    Me.txtKortasID.Value = ""
+
+   
+End Sub
+Private Sub cmdSubmit_Click()
+    Dim tempWS As Worksheet
+    Dim targetWB As Workbook
+    Dim targetWS As Worksheet
+    Dim filePath As String
+    Dim workOrderNumber As String
+    Dim lastRow As Long
+    Dim nextRow As Long
+    Dim tempData As Variant
+    Dim i As Long
+
+    ' Validate Work Order selection
+    workOrderNumber = Me.cmbWorkOrder.Value
+    If workOrderNumber = "" Then
+        MsgBox "Please select a Work Order Number.", vbExclamation
+        Exit Sub
+    End If
+
+    ' Set TempBOM sheet
+    Set tempWS = ThisWorkbook.Sheets("TempBOM")
+
+    ' If TempBOM is empty, add headers and current form data
+    If Application.WorksheetFunction.CountA(tempWS.UsedRange) = 0 Then
+        tempWS.Range("A1:G1").Value = Array("Component", "Drawing Number", "Qty/Set", "Total Qty", "Material", "Kortas ID", "Work Order No")
+        nextRow = 2
+    Else
+        nextRow = tempWS.Cells(tempWS.Rows.Count, "A").End(xlUp).Row + 1
+    End If
+
+    ' Add form data to TempBOM
+    With tempWS
+        .Cells(nextRow, 1).Value = Me.txtComponent.Value
+        .Cells(nextRow, 2).Value = Me.txtDrawingNumber.Value
+        .Cells(nextRow, 3).Value = Me.txtQtyPerSet.Value
+        .Cells(nextRow, 4).Value = Me.txtTotalQty.Value
+        .Cells(nextRow, 5).Value = Me.txtMaterial.Value
+        .Cells(nextRow, 6).Value = Me.txtKortasID.Value
+        .Cells(nextRow, 7).Value = workOrderNumber
+    End With
+
+    ' Path to material_master.xlsx
+    filePath = ThisWorkbook.Path & "\material_master.xlsx"
+    
+    ' Open material_master.xlsx
+    On Error Resume Next
+    Set targetWB = Workbooks.Open(filePath)
+    If targetWB Is Nothing Then
+        MsgBox "Unable to open material_master.xlsx", vbCritical
+        Exit Sub
+    End If
+    On Error GoTo 0
+
+    ' Check if sheet for this Work Order exists
+    On Error Resume Next
+    Set targetWS = targetWB.Sheets(workOrderNumber)
+    On Error GoTo 0
+
+    ' If not found, create a new sheet and add headers
+    If targetWS Is Nothing Then
+        Set targetWS = targetWB.Sheets.Add(After:=targetWB.Sheets(targetWB.Sheets.Count))
+        targetWS.Name = workOrderNumber
+        targetWS.Range("A1:H1").Value = Array("S.No.", "Component", "Drawing Number", "Qty/Set", "Total Qty", "Material", "Kortas ID", "Work Order No")
+    End If
+
+    ' Find next empty row in Work Order sheet
+    lastRow = targetWS.Cells(targetWS.Rows.Count, "A").End(xlUp).Row + 1
+
+    ' Copy data from TempBOM to Work Order sheet with S.No.
+    tempData = tempWS.Range("A2:G" & nextRow).Value
+    For i = 1 To UBound(tempData, 1)
+        targetWS.Cells(lastRow, 1).Value = lastRow - 1 ' S.No.
+        targetWS.Cells(lastRow, 2).Resize(1, 7).Value = Application.Index(tempData, i, 0)
+        lastRow = lastRow + 1
+    Next i
+
+    ' Save and close
+    targetWB.Save
+    targetWB.Close
+
+    ' Clear TempBOM and form
+    tempWS.Cells.ClearContents
+
+    Me.txtComponent.Value = ""
+    Me.txtDrawingNumber.Value = ""
+    Me.txtQtyPerSet.Value = ""
+    Me.txtTotalQty.Value = ""
+    Me.txtMaterial.Value = ""
+    Me.txtKortasID.Value = ""
+    Me.cmbWorkOrder.Value = ""
+
+    MsgBox "BOM saved to '" & workOrderNumber & "' sheet in material_master.xlsx with headers and auto-numbering.", vbInformation
+End Sub
+

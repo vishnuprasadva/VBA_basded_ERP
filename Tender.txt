@@ -1,0 +1,110 @@
+Private Sub cmbCustomers_Change()
+
+End Sub
+
+Private Sub cmbCustomers_Click()
+
+End Sub
+
+Private Sub Label1_Click()
+
+
+
+Private Sub SubButton_Click()
+    Dim filePath As String
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim nextRow As Long
+
+    ' Path to TenderEntry.xlsx (same folder as this workbook)
+    filePath = ThisWorkbook.Path & "\tender_master.xlsx"
+
+    ' Open the TenderEntry workbook
+    On Error Resume Next
+    Set wb = Workbooks.Open(filePath)
+    On Error GoTo 0
+
+    If wb Is Nothing Then
+        MsgBox "Could not open TenderEntry.xlsx", vbCritical
+        Exit Sub
+    End If
+
+    ' Set the worksheet (Sheet1 by default)
+    Set ws = wb.Sheets("Tenders") ' Change name if needed
+
+    ' Find the next empty row in column A
+    nextRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row + 1
+
+    ' Save the UserForm values
+    ws.Cells(nextRow, 2).Value = Me.TxtTender.Value
+    ws.Cells(nextRow, 3).Value = Me.TxtProduct.Value
+    ws.Cells(nextRow, 4).Value = Me.TxtQ.Value
+    ws.Cells(nextRow, 1).Value = Me.cmbCustomers.Value
+
+    ' Save and close TenderEntry.xlsx
+    wb.Close SaveChanges:=True
+
+    MsgBox "Tender details submitted successfully!", vbInformation
+    
+
+    ' Clear form inputs for new entry
+    Me.TxtTender.Value = ""
+    Me.TxtProduct.Value = ""
+    Me.TxtQ.Value = ""
+    Me.cmbCustomers.Value = ""
+    Unload Me
+    
+End Sub
+
+
+
+
+Private Sub TxtProduct_Change()
+
+End Sub
+
+Private Sub UserForm_Initialize()
+    Dim filePath As String
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim rng As Range
+    Dim cell As Range
+
+    ' Path to customer_master.xlsx in same folder as this workbook
+    filePath = ThisWorkbook.Path & "\customer_master.xlsx"
+
+    ' Try to open the workbook
+    On Error Resume Next
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True)
+    On Error GoTo 0
+
+    If wb Is Nothing Then
+        MsgBox "Could not open file: " & filePath, vbCritical
+        Exit Sub
+    End If
+
+    ' Set the "Customers" sheet
+    Set ws = wb.Sheets("Customers")
+    If ws Is Nothing Then
+        MsgBox "Sheet 'Customers' not found!", vbCritical
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+
+    ' Read a fixed range from column B to include all possible customers
+    Set rng = ws.Range("B2:B1000") ' Adjust if you expect more than 1000 customers
+
+    ' Loop through each cell and add to combo box if not blank
+    For Each cell In rng
+        If Trim(cell.Value) <> "" Then
+            Me.cmbCustomers.AddItem cell.Value
+        End If
+    Next cell
+
+    ' Close the external workbook without saving
+    wb.Close SaveChanges:=False
+End Sub
+Private Sub tenderEntry_Click()
+    TenderForm.Show
+End Sub
+

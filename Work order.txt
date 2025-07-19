@@ -1,0 +1,146 @@
+Private Sub ComboBox2_Change()
+
+End Sub
+
+Private Sub TextBox8_Change()
+
+End Sub
+
+
+
+
+Private Sub TextBox2_Change()
+
+End Sub
+
+Private Sub TextBox7_Change()
+
+End Sub
+
+Private Sub UserForm_Initialize()
+    ' Load customer names
+    Dim customerWb As Workbook, wsCust As Worksheet
+    Dim lastRow As Long, i As Long
+    Dim filePath As String
+    filePath = ThisWorkbook.Path & "\customer_master.xlsx"
+
+    Set customerWb = Workbooks.Open(filePath, ReadOnly:=True)
+    Set wsCust = customerWb.Sheets("Customers")
+
+    lastRow = wsCust.Cells(wsCust.Rows.Count, 1).End(xlUp).Row
+    For i = 2 To lastRow
+        Me.cboCustomerName.AddItem wsCust.Cells(i, 2).Value ' Assuming col 2 = Name
+    Next i
+    customerWb.Close SaveChanges:=False
+
+    ' Load tender numbers
+    Dim tenderWb As Workbook, wsTndr As Worksheet
+    filePath = ThisWorkbook.Path & "\tender_master.xlsx"
+    Set tenderWb = Workbooks.Open(filePath, ReadOnly:=True)
+    Set wsTndr = tenderWb.Sheets("Tenders")
+
+    lastRow = wsTndr.Cells(wsTndr.Rows.Count, 1).End(xlUp).Row
+    For i = 2 To lastRow
+        Me.cboTenderNumber.AddItem wsTndr.Cells(i, 2).Value ' Assuming col 1 = Tender No.
+    Next i
+    tenderWb.Close SaveChanges:=False
+End Sub
+Private Sub cboCustomerName_Change()
+    Dim wb As Workbook, ws As Worksheet
+    Dim filePath As String
+    filePath = ThisWorkbook.Path & "\customer_master.xlsx"
+
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True)
+    Set ws = wb.Sheets("Customers")
+
+    Dim i As Long
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        If ws.Cells(i, 2).Value = Me.cboCustomerName.Value Then
+            Me.txtCustomerID.Value = ws.Cells(i, 1).Value ' Assuming col 1 = ID
+            Exit For
+        End If
+    Next i
+    wb.Close False
+End Sub
+Private Sub cboTenderNumber_Change()
+    Dim wb As Workbook, ws As Worksheet
+    Dim filePath As String
+    filePath = ThisWorkbook.Path & "\tender_master.xlsx"
+
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True)
+    Set ws = wb.Sheets("Tenders")
+
+    Dim i As Long
+    For i = 2 To ws.Cells(ws.Rows.Count, 2).End(xlUp).Row
+        If ws.Cells(i, 2).Value = Me.cboTenderNumber.Value Then
+            Me.txtDescription.Value = ws.Cells(i, 3).Value ' Assuming col 2 = Desc
+            Me.txtQuantity.Value = ws.Cells(i, 4).Value    ' Assuming col 3 = Qty
+            Exit For
+        End If
+    Next i
+    wb.Close False
+End Sub
+Private Sub cmdSubmit_Click()
+    Dim ws As Worksheet
+    Dim nextRow As Long
+    Dim pdfPath As String
+    Dim fileName As String
+
+    Set ws = ThisWorkbook.Sheets("WorkOrders")
+
+    ' Find next empty row
+    nextRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
+
+    ' Auto-generate Work Order Number
+    If Me.txtWorkOrderNumber.Value = "" Then
+        Me.txtWorkOrderNumber.Value = "WO" & Format(nextRow - 1, "0000")
+    End If
+
+    ' Write to sheet
+    ws.Cells(5, 6).Value = Me.txtWorkOrderNumber.Value
+    ws.Cells(6, 6).Value = Me.txtReleaseDate.Value
+    ws.Cells(5, 2).Value = Me.txtPurchaseOrderNumber.Value
+    ws.Cells(6, 3).Value = Me.cboCustomerName.Value
+    ws.Cells(5, 4).Value = Me.txtCustomerID.Value
+    ws.Cells(9, 1).Value = Me.txtScopeOfWork.Value
+
+    ws.Cells(12, 2).Value = Me.txtDescription.Value
+    ws.Cells(12, 6).Value = Me.txtQuantity.Value
+    ws.Cells(15, 1).Value = Me.txtOtherConditions.Value
+    ws.Cells(20, 1).Value = Me.txtPaymentTerms.Value
+    ws.Cells(23, 1).Value = Me.txtDeliveryClause.Value
+
+
+    ' Format the sheet for printing
+    With ws.PageSetup
+        .Orientation = xlPortrait
+        .Zoom = False
+        .FitToPagesWide = 1
+        .FitToPagesTall = 1
+        .CenterHorizontally = True
+        .CenterVertically = False
+    End With
+
+    ' Export to PDF
+    fileName = Me.txtWorkOrderNumber.Value & ".pdf"
+    pdfPath = ThisWorkbook.Path & "\Workorders\" & fileName
+
+    ws.ExportAsFixedFormat Type:=xlTypePDF, fileName:=pdfPath, Quality:=xlQualityStandard, IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=True
+
+    MsgBox "Work Order submitted and PDF generated successfully at:" & vbCrLf & pdfPath, vbInformation
+
+    ' Optionally clear form here
+    ' Me.Hide
+End Sub
+
+
+
+
+
+
+
+
+
+   
+
+

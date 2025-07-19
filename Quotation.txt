@@ -1,0 +1,145 @@
+
+
+Private Sub Image1_BeforeDragOver(ByVal Cancel As MSForms.ReturnBoolean, ByVal Data As MSForms.DataObject, ByVal X As Single, ByVal Y As Single, ByVal DragState As MSForms.fmDragState, ByVal Effect As MSForms.ReturnEffect, ByVal Shift As Integer)
+
+End Sub
+
+Private Sub txtAddress_Change()
+
+End Sub
+
+Private Sub UserForm_Initialize()
+    ' Load customer names
+    Dim wb As Workbook, ws As Worksheet, lastRow As Long, i As Long
+    Set wb = Workbooks.Open(ThisWorkbook.Path & "\customer_master.xlsx")
+   Set ws = wb.Sheets("Customers")
+    
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    For i = 2 To lastRow
+        cmbCustomerName.AddItem ws.Cells(i, 2).Value ' Assuming name in column B
+    Next i
+    wb.Close False
+    
+    ' Load tender numbers
+    Set wb = Workbooks.Open(ThisWorkbook.Path & "\tender_master.xlsx")
+     Set ws = wb.Sheets("Tenders")
+    
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    For i = 2 To lastRow
+        cmbTenderNumber.AddItem ws.Cells(i, 2).Value ' Assuming tender number in column B
+         
+    Next i
+    wb.Close False
+End Sub
+Private Sub cmbCustomerName_Change()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim i As Long, lastRow As Long
+    Dim selectedCustomer As String
+
+    selectedCustomer = cmbCustomerName.Value
+    Set wb = Workbooks.Open(ThisWorkbook.Path & "\customer_master.xlsx")
+    Set ws = wb.Sheets("Customers") ' Change to Sheets("Customers") if needed
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    For i = 2 To lastRow
+        If Trim(ws.Cells(i, 2).Value) = Trim(selectedCustomer) Then
+            txtAddress.Value = ws.Cells(i, 3).Value ' Assuming Address in Column B
+            Exit For
+        End If
+    Next i
+
+    wb.Close False
+End Sub
+
+Private Sub cmbTenderNumber_Change()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long
+    Dim i As Long
+    Dim selectedTender As String
+
+    selectedTender = cmbTenderNumber.Value
+    filePath = ThisWorkbook.Path & "\tender_master.xlsx"
+
+    On Error GoTo ErrorHandler
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True)
+    Set ws = wb.Sheets("Tenders") ' Make sure the sheet is named "Tenders"
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    For i = 2 To 10
+    If ws.Cells(i, 2).Value = selectedTender Then
+        txtDescription.Value = ws.Cells(i, 3).Value
+        txtQuantity.Value = ws.Cells(i, 4).Value
+        Exit For
+    End If
+Next i
+
+
+    wb.Close SaveChanges:=False
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Error: " & Err.description
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+Private Sub cmdGeneratePDF_Click()
+    Dim ws As Worksheet
+    Dim pdfPath As String
+    Dim tenderNo As String
+    Dim description As String
+    Dim quantity As Variant
+    Dim RATE As Currency
+    Dim totalAmount As Currency
+
+    ' Set the worksheet to QuotationTemplate
+    Set ws = ThisWorkbook.Sheets("QuotationTemplate")
+
+    ' Pull data from the form
+    tenderNo = Me.cmbTenderNumber.Value
+    description = Me.txtDescription.Value
+    quantity = Val(Me.txtQuantity.Value)
+    RATE = Val(Me.txtRate.Value)
+    totalAmount = quantity * RATE
+
+    ' Fill the QuotationTemplate sheet
+    ws.Range("B3").Value = "Date: " & Format(Date, "dd.mm.yyyy")
+    ws.Range("B4").Value = "Tender No: " & tenderNo
+    ws.Range("B6").Value = "To: " & Me.txtAddress.Value
+    ws.Range("A10").Value = description
+    ws.Range("B10").Value = quantity
+    ws.Range("C10").Value = RATE
+    ws.Range("D10").Value = totalAmount
+    ws.Range("D15").Value = totalAmount
+    'ws.Range("A17").Value = "Rupees " & WorksheetFunction.SpellNumber(totalAmount) & " only"
+
+    ' Set PDF save path
+    pdfPath = ThisWorkbook.Path & "\Quotation_" & Replace(tenderNo, "/", "_") & ".pdf"
+
+    ' ?? Fix page setup BEFORE exporting to PDF
+    With ws.PageSetup
+        .Orientation = xlPortrait
+        .Zoom = False
+        .FitToPagesWide = 1
+        .FitToPagesTall = 1
+        .LeftMargin = Application.InchesToPoints(0.25)
+        .RightMargin = Application.InchesToPoints(0.25)
+        .TopMargin = Application.InchesToPoints(0.5)
+        .BottomMargin = Application.InchesToPoints(0.5)
+        .CenterHorizontally = True
+    End With
+
+    ' Export to PDF
+     MsgBox "Quotation PDF created successfully at:" & vbCrLf & pdfPath, vbInformation
+    
+    ws.ExportAsFixedFormat Type:=xlTypePDF, fileName:=pdfPath, Quality:=xlQualityStandard, IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=True
+
+    MsgBox "Work Order submitted and PDF generated successfully at:" & vbCrLf & pdfPath, vbInformation
+
+
+   
+End Sub
+

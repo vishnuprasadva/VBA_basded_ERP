@@ -1,0 +1,108 @@
+
+
+Private Sub UserForm_Initialize()
+    Dim filePath As String
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim sheetName As String
+
+    ' Path to material_master.xlsx
+    filePath = ThisWorkbook.Path & "\material_master.xlsx"
+    
+    On Error Resume Next
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True)
+    On Error GoTo 0
+
+    If wb Is Nothing Then
+        MsgBox "Could not open material_master.xlsx", vbCritical
+        Exit Sub
+    End If
+
+    ' Load all sheet names into combo box
+    cmbWorkOrderID.Clear
+    For Each ws In wb.Sheets
+        cmbWorkOrderID.AddItem ws.Name
+    Next ws
+
+    wb.Close SaveChanges:=False
+End Sub
+Private Sub cmbSearch_Click()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long
+    Dim i As Long
+    Dim selectedSheet As String
+    Dim dataArray() As Variant
+    Dim displayArray() As Variant
+
+    selectedSheet = cmbWorkOrderID.Value
+    If selectedSheet = "" Then
+        MsgBox "Please select a Work Order ID.", vbExclamation
+        Exit Sub
+    End If
+
+    filePath = ThisWorkbook.Path & "\material_master.xlsx"
+
+    On Error Resume Next
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True)
+    On Error GoTo 0
+
+    If wb Is Nothing Then
+        MsgBox "Could not open material_master.xlsx", vbCritical
+        Exit Sub
+    End If
+
+    On Error Resume Next
+    Set ws = wb.Sheets(selectedSheet)
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        MsgBox "Sheet '" & selectedSheet & "' not found!", vbCritical
+        wb.Close False
+        Exit Sub
+    End If
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    If lastRow < 2 Then
+        MsgBox "No BOM data found in sheet.", vbInformation
+        wb.Close False
+        Exit Sub
+    End If
+
+    ' Read data (skip header in row 1)
+    dataArray = ws.Range("A2:F" & lastRow).Value
+
+    ' Prepare array with header row + data
+    ReDim displayArray(1 To UBound(dataArray) + 1, 1 To 6)
+
+    ' Add header row
+    displayArray(1, 1) = "Sl.No"
+    displayArray(1, 2) = "Assembly Component"
+    displayArray(1, 3) = "Drawing Number"
+    displayArray(1, 4) = "Qty/Set"
+    displayArray(1, 5) = "Total Qty"
+    displayArray(1, 6) = "Material"
+
+    ' Copy data rows
+    For i = 1 To UBound(dataArray)
+        displayArray(i + 1, 1) = dataArray(i, 1)
+        displayArray(i + 1, 2) = dataArray(i, 2)
+        displayArray(i + 1, 3) = dataArray(i, 3)
+        displayArray(i + 1, 4) = dataArray(i, 4)
+        displayArray(i + 1, 5) = dataArray(i, 5)
+        displayArray(i + 1, 6) = dataArray(i, 6)
+    Next i
+
+    ' Load into ListBox
+    With LstBOM
+        .Clear
+        .ColumnCount = 6
+        .ColumnWidths = "40;150;100;60;60;100"
+        .List = displayArray
+    End With
+
+    wb.Close SaveChanges:=False
+End Sub
+
